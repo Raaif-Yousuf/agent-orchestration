@@ -1,0 +1,72 @@
+name: shell-and-actions-lint
+
+# Reusable workflow: shellcheck over every tracked *.sh, actionlint over
+# every workflow in the repo.
+#
+# Copy into your own repo's .github/workflows/ (see python-quality.yml for
+# why it can't be called directly from this library's workflows/
+# directory), then call it with
+# `uses: ./.github/workflows/shell-and-actions-lint.yml`.
+#
+# The shellcheck job handles the empty case explicitly: a fresh repo has no
+# shell scripts yet, and a check that errors on "nothing to do" is the kind
+# of check that gets deleted the first time it blocks an unrelated PR.
+
+on:
+  workflow_call:
+    inputs:
+      shellcheck-severity:
+        description: "Minimum shellcheck severity to fail on (style, info, warning, error)."
+        type: string
+        default: "warning"
+      working-directory:
+        type: string
+        default: "."
+  workflow_dispatch:
+    inputs:
+      shellcheck-severity:
+        description: "Minimum shellcheck severity to fail on (style, info, warning, error)."
+        type: string
+        default: "warning"
+      working-directory:
+        type: string
+        default: "."
+
+permissions:
+  contents: read
+
+jobs:
+  shellcheck:
+    name: shellcheck tracked shell scripts
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run shellcheck over every tracked shell script
+        run: |
+          set -euo pipefail
+          mapfile -d '' files < <(git ls-files -z '*.sh')
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "no shell scripts tracked, nothing to check"
+            exit 0
+          fi
+          printf '%s\n' "${files[@]}"
+          shellcheck --severity="${{ inputs.shellcheck-severity }}" "${files[@]}"
+
+  actionlint:
+    name: actionlint every workflow
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run actionlint
+        run: |
+          set -euo pipefail
+          bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+          ./actionlint -color

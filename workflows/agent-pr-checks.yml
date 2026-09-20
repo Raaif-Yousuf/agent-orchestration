@@ -1,0 +1,150 @@
+name: agent-pr-checks
+
+# Checks specific to a PR an autonomous agent opened, on top of whatever
+# tests already run. An agent can write code that passes every test and
+# still open a PR nobody should merge blind: one that quietly touched files
+# outside what it claimed, added a test file the runner never collects (a
+# check that can never fail), or never wrote down what it verified.
+#
+# Copy into your own repo's .github/workflows/ and call it from a workflow
+# triggered by `pull_request`. It only produces a meaningful result in that
+# context: without a pull_request event in scope, every check is skipped.
+
+on:
+  workflow_call:
+    inputs:
+      protected-branch:
+        description: "Branch a PR must not be opened directly from."
+        type: string
+        default: "main"
+      test-collect-command:
+        description: >
+          Command that lists the tests the runner will actually collect,
+          for example `pytest --collect-only -q`. Used to catch a new test
+          file the PR adds that the runner silently skips.
+        type: string
+        default: "pytest --collect-only -q"
+      test-file-pattern:
+        description: "grep -E pattern identifying new test/guard files worth checking."
+        type: string
+        default: "(^|/)test_[^/]+\\.py$|_test\\.py$"
+      verification-heading:
+        description: "Heading the PR body's verification section must contain."
+        type: string
+        default: "## Verification"
+      working-directory:
+        type: string
+        default: "."
+  workflow_dispatch:
+    inputs:
+      protected-branch:
+        description: "Branch a PR must not be opened directly from."
+        type: string
+        default: "main"
+      test-collect-command:
+        description: "Command that lists the tests the runner will actually collect."
+        type: string
+        default: "pytest --collect-only -q"
+      test-file-pattern:
+        description: "grep -E pattern identifying new test/guard files worth checking."
+        type: string
+        default: "(^|/)test_[^/]+\\.py$|_test\\.py$"
+      verification-heading:
+        description: "Heading the PR body's verification section must contain."
+        type: string
+        default: "## Verification"
+      working-directory:
+        type: string
+        default: "."
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  checks:
+    name: agent PR sanity checks
+    if: ${{ github.event.pull_request != null }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Branch is not the protected branch
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          PROTECTED_BRANCH: ${{ inputs.protected-branch }}
+        run: |
+          set -euo pipefail
+          echo "head branch: $HEAD_REF"
+          if [ "$HEAD_REF" = "$PROTECTED_BRANCH" ]; then
+            echo "PR head branch is '$PROTECTED_BRANCH'; an agent must open from a feature branch." >&2
+            exit 1
+          fi
+
+      - name: Diff matches the files the PR body claims to touch
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          echo "changed files:"
+          echo "$changed"
+          missing=0
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+            if ! grep -qF "$file" <<< "$PR_BODY"; then
+              echo "changed file not mentioned in the PR body: $file" >&2
+              missing=1
+            fi
+          done <<< "$changed"
+          if [ "$missing" -eq 1 ]; then
+            echo "the PR body must list every file the diff touches" >&2
+            exit 1
+          fi
+
+      - name: New test or guard files are collected by the test runner
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          added="$(git diff --name-only --diff-filter=A "$BASE_SHA" "$HEAD_SHA" | grep -E '${{ inputs.test-file-pattern }}' || true)"
+          if [ -z "$added" ]; then
+            echo "no new test or guard files in this diff"
+            exit 0
+          fi
+          collected="$(${{ inputs.test-collect-command }})"
+          missing=0
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+            base="$(basename "$file")"
+            if ! grep -qF "$base" <<< "$collected"; then
+              echo "new test file not collected by the test runner: $file" >&2
+              missing=1
+            fi
+          done <<< "$added"
+          if [ "$missing" -eq 1 ]; then
+            echo "a test file the runner never collects is a check that can never fail" >&2
+            exit 1
+          fi
+
+      - name: PR body has a verification section
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          set -euo pipefail
+          if ! grep -qF "${{ inputs.verification-heading }}" <<< "$PR_BODY"; then
+            echo "PR body is missing a '${{ inputs.verification-heading }}' section" >&2
+            exit 1
+          fi
+          if ! grep -qE '^\s*(\$ |pytest|npm|ruff|python|cargo|go test)' <<< "$PR_BODY"; then
+            echo "verification section found, but no obvious command or result was detected" >&2
+            exit 1
+          fi
