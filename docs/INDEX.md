@@ -20,10 +20,9 @@ whole section of `docs/lessons.md` about exactly that.
   validators behave the same locally and in CI.
 - **`.gitattributes`** - line-ending rules: LF for shell and text, CRLF for
   `.ps1`, binary for images.
-- **`.gitignore`** - standard Python/venv ignores.
-- **`.msg`** - a leftover commit-message file from an earlier `git commit -F`
-  that was never deleted after use. It's tracked debris, not toolkit
-  content; don't copy it into a new project.
+- **`.gitignore`** - standard Python/venv ignores, plus the scratch files
+  used for `git commit -F` and `gh pr create --body-file`. Those got
+  committed once by accident, which is why they are ignored by name now.
 
 ## `.github/` - issue forms, PR template, this repo's own CI
 
