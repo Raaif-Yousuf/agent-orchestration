@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+node_modules/
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vs/
+.vscode/
+*.log
+.scratch/
