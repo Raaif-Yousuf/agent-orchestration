@@ -1,0 +1,20 @@
+{
+  "model": "opus",
+  "effortLevel": "high",
+  "theme": "dark",
+  "statusLine": {
+    "type": "command",
+    "command": "\"<path to bash.exe>\" \"<path to .claude>/statusline.sh\"",
+    "refreshInterval": 15
+  },
+  "subagentStatusLine": {
+    "type": "command",
+    "command": "\"<path to jq.exe>\" -c -r -f \"<path to .claude>/subagent-statusline.jq\""
+  },
+  "enabledPlugins": {
+    "github@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true,
+    "pyright-lsp@claude-plugins-official": true
+  }
+}
