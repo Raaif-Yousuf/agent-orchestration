@@ -13,3 +13,6 @@ desktop.ini
 .vscode/
 *.log
 .scratch/
+.msg
+.body
+.body2
