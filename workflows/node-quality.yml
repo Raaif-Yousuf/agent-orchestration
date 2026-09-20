@@ -1,0 +1,82 @@
+name: node-quality
+
+# Reusable workflow: npm ci, lint, test.
+#
+# Copy into your own repo's .github/workflows/ (see python-quality.yml for
+# why it can't be called directly from this library's workflows/ directory),
+# then call it with `uses: ./.github/workflows/node-quality.yml`, or run it
+# by hand from the Actions tab.
+#
+# Expects a package-lock.json in working-directory so actions/setup-node can
+# cache npm's store; `npm ci` fails fast if the lockfile is missing or out of
+# sync with package.json, which is the point of using ci over install here.
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: "Node.js version to run against."
+        type: string
+        default: "20"
+      working-directory:
+        description: "Directory containing package.json."
+        type: string
+        default: "."
+      lint-command:
+        description: "Command that runs the linter."
+        type: string
+        default: "npm run lint --if-present"
+      test-command:
+        description: "Command that runs the test suite."
+        type: string
+        default: "npm test"
+  workflow_dispatch:
+    inputs:
+      node-version:
+        description: "Node.js version to run against."
+        type: string
+        default: "20"
+      working-directory:
+        description: "Directory containing package.json."
+        type: string
+        default: "."
+      lint-command:
+        description: "Command that runs the linter."
+        type: string
+        default: "npm run lint --if-present"
+      test-command:
+        description: "Command that runs the test suite."
+        type: string
+        default: "npm test"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: node-quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: install, lint, test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+          cache-dependency-path: ${{ inputs.working-directory }}/package-lock.json
+
+      - name: npm ci
+        run: npm ci
+
+      - name: Lint
+        run: ${{ inputs.lint-command }}
+
+      - name: Test
+        run: ${{ inputs.test-command }}

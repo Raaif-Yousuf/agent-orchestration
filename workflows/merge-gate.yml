@@ -1,0 +1,92 @@
+name: merge-gate
+
+# Two jobs for two different questions, because conflating them is the
+# mistake this workflow exists to prevent:
+#
+#   gate        - the fast, structural check to run after EVERY merge into
+#                 your integration branch, so a red run points at exactly
+#                 one merge. Examples: a baseline comparison, a file-count
+#                 ratchet, a lint-violation ratchet, a migration-version
+#                 check, a changelog fold.
+#   full-suite  - the whole test suite. Run this once, alone, after a wave
+#                 of merges lands, not after every single one. The gate is a
+#                 subset of the full suite by design, so "gate green after
+#                 every merge" never means "the full suite is green".
+#
+# See this repo's workflows/README.md for the two measured incidents this
+# shape comes from, and write down next to your own gate-command exactly
+# what it does NOT cover.
+
+on:
+  workflow_call:
+    inputs:
+      gate-command:
+        description: >
+          Fast structural check to run after every merge. Must be cheap
+          enough to run every time, not just at the end of a wave.
+        type: string
+        required: true
+      full-suite-command:
+        description: >
+          The complete test suite. Only runs when run-full-suite is true;
+          the gate job never runs this, since a subset check standing in
+          for the full suite is exactly the failure mode this workflow
+          exists to avoid.
+        type: string
+        required: true
+      working-directory:
+        type: string
+        default: "."
+      run-full-suite:
+        description: >
+          Also run the full-suite job. Set this once, alone, after a wave
+          of merges finishes, not on every routine merge.
+        type: boolean
+        default: false
+  workflow_dispatch:
+    inputs:
+      gate-command:
+        description: "Fast structural check to run after every merge."
+        type: string
+        required: true
+      full-suite-command:
+        description: "The complete test suite."
+        type: string
+        required: true
+      working-directory:
+        type: string
+        default: "."
+      run-full-suite:
+        description: "Also run the full-suite job."
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    name: structural gate (run after every merge)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run gate command
+        run: ${{ inputs.gate-command }}
+
+  full-suite:
+    name: full suite (run once, alone, after the wave)
+    if: ${{ inputs.run-full-suite }}
+    needs: gate
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run full suite
+        run: ${{ inputs.full-suite-command }}
