@@ -140,7 +140,7 @@ def test_empty_body_is_caught(tmp_path: Path) -> None:
         'api_key = "0123456789abcdef"',
         "host 10.24.8.11 is the box",
         "mail me at somebody@somewhere.net",
-        "the clairanalytics dashboard",
+        "the sanitizercanarytoken dashboard",
     ],
 )
 def test_sanitization_rules_fire(tmp_path: Path, line: str) -> None:
@@ -203,6 +203,27 @@ def test_repo_structure_is_valid() -> None:
         + validate_repo.check_workflows()
     )
     assert problems == [], "\n".join(problems)
+
+
+def test_denylist_is_stored_as_hashes_only() -> None:
+    """The denylist must never carry a real name in plaintext.
+
+    This file is public. A denylist written out in the clear publishes exactly
+    the names it exists to keep out, which is how the first version of it
+    became the only place those names still appeared.
+    """
+    source = (REPO_ROOT / "scripts" / "check_sanitization.py").read_text(encoding="utf-8")
+    assert "BANNED_SUBSTRINGS" not in source
+    for digest in check_sanitization.DENIED_TOKEN_HASHES:
+        assert len(digest) == 64
+        assert all(character in "0123456789abcdef" for character in digest)
+
+
+def test_denied_token_is_found_anywhere_on_a_line() -> None:
+    assert check_sanitization.denied_tokens("path/to/SanitizerCanaryToken-wt/x") == [
+        "sanitizercanarytoken"
+    ]
+    assert check_sanitization.denied_tokens("an ordinary sentence") == []
 
 
 def test_sanitization_exemptions_are_exactly_two_files() -> None:
