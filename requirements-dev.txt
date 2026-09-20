@@ -1,0 +1,4 @@
+# Pinned so the validators behave the same locally and in CI.
+PyYAML==6.0.2
+pytest==8.3.4
+ruff==0.8.6
