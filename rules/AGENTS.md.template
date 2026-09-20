@@ -1,0 +1,89 @@
+<!--
+Fill-in-the-blanks AGENTS.md. Copy to the project root as AGENTS.md and
+replace every <placeholder>. AGENTS.md is an open, tool-agnostic convention
+(https://agents.md/), not a Claude Code file format: plain Markdown, no
+frontmatter, no required schema. In a monorepo, the AGENTS.md nearest to the
+file being edited wins, so a subproject can carry its own that overrides
+this one for that subtree. See rules/README.md for how this relates to
+CLAUDE.md and which strategy this toolkit uses. -->
+
+# AGENTS.md
+
+<!-- Two lines: what this project is and who it is for. No feature list. -->
+
+<one or two sentences: what the project does and who runs it>
+
+## Setup
+
+<!-- The exact commands to get from a clean clone to a working dev environment. -->
+
+```
+<install / bootstrap command>
+```
+
+## Build
+
+```
+<build command, or "no build step">
+```
+
+## Test
+
+<!--
+The exact, copy-pasteable command. Not "run the tests" - the actual
+invocation, including how to run a single file or test name if that differs. -->
+
+```
+<test command>
+```
+
+Run `<narrower command>` to test a single file or module while iterating.
+
+## Code style and conventions
+
+<!-- Formatter/linter names and the command that enforces them, not prose about style. -->
+
+- Formatting: `<formatter, e.g. ruff format / prettier>`, enforced by `<command>`.
+- Linting: `<linter>`, enforced by `<command>`.
+- <One or two project-specific conventions that a linter cannot check.>
+
+## What not to do
+
+<!-- Bans only, mirrored from CLAUDE.md's Hard Rules if the project has one. Do not duplicate the reasoning, just the rule. -->
+
+- Never `<banned pattern>`.
+- Never edit `<generated or vendored path>` by hand.
+
+## How to verify a change
+
+<!-- The sequence a contributor or agent runs before calling something done. -->
+
+1. `<lint command>`
+2. `<test command>`
+3. `<any project-specific check, e.g. a validator script>`
+
+## Commit and PR conventions
+
+<!-- Message format, branch naming, what a PR description must contain. -->
+
+- Commit style: `<e.g. Conventional Commits: feat:/fix:/docs:/chore:>`.
+- <Branch naming convention, if any.>
+- A PR description states what changed, why, and how it was verified.
+
+## Relationship to CLAUDE.md
+
+<!--
+Only relevant if the project also targets Claude Code. State plainly which
+of the two common strategies this project uses, and why. Do not present
+either as mandatory: this section is a convention, not a schema, and the
+rest of this file is the same. -->
+
+<This project uses strategy (a) or (b) below. Say which and why in one line.>
+
+- **(a) AGENTS.md as the single source.** Keep this file authoritative and
+  make `CLAUDE.md` a pointer that imports it (`@AGENTS.md`, Claude Code's
+  own import syntax). One file to keep true; Claude Code reads the import
+  automatically.
+- **(b) Keep both, accept the duplication.** Useful when Claude Code needs
+  instructions (for example, hard rules enforced by a hook) that would not
+  make sense to another tool reading this file.

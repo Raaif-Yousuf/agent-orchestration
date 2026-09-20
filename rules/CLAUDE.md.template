@@ -1,0 +1,98 @@
+<!--
+This is a fill-in-the-blanks CLAUDE.md, not a finished one. Copy it to the
+project root as CLAUDE.md, replace every <placeholder>, and delete whatever
+section does not apply. Claude Code loads this file into every session, so
+the single most useful property it can have is being short enough that
+someone actually keeps it true. If a rule needs a paragraph of nuance, it
+belongs in docs/, not here: put a one-line pointer here instead.
+See rules/hard-rules-catalog.md for a menu of Hard Rules to pick from, and
+rules/README.md for how CLAUDE.md relates to AGENTS.md.
+-->
+
+# <project name> - Quick Reference
+
+<!--
+Two or three lines. What the project is, who it is for, one thing that
+makes it unusual. Not a pitch, not a feature list. -->
+
+**What this is:** <one line: what the project does and who uses it>
+**Repo:** `<repo path or URL>` | **Status:** <alpha / production / archived>
+
+---
+
+## Hard Rules
+
+<!--
+Every rule here is a BAN or a single REQUIRED move, never advice. If you
+cannot phrase it as "never do X" or "always do Y", it is guidance, and
+guidance goes in docs/. Number them so a rule can be referenced by number
+elsewhere. Do not put a count of anything test-derivable in this heading or
+in prose below (a guard count, a coverage number): a number written by hand
+goes stale the day after it is true. Put it in a test instead and link to
+the command that prints it live. See rules/hard-rules-catalog.md for a menu
+to draw from and the enforcement mechanism each rule needs. -->
+
+1. **Never `<banned call or pattern>`** - use `<the approved replacement>` instead.
+2. **Always `<required move>`** before `<the action it guards>`.
+3. **<Resource> lives only in `<location>`** - never duplicate it in `<other place>`.
+4. **Every `<unit of work>` needs `<the artifact that must accompany it>`** (for example, a test, a doc entry, a changelog line).
+5. **Run `<the exact verification command>` before committing** - not the full suite, not a subset you guessed at.
+
+<!-- Add project-specific rules below. Keep the list under ten items. -->
+
+---
+
+## Stack
+
+<!--
+Only the layers that carry a gotcha. Do not restate what the manifest
+(package.json, pyproject.toml, Cargo.toml) already says; link to it instead. -->
+
+| Layer | Technology | Gotcha |
+| --- | --- | --- |
+| <e.g. Database> | <e.g. Postgres 16> | <e.g. migrations run only via `<script>`, never by hand> |
+| <e.g. Build> | <tool> | <the one flag or step people forget> |
+
+Full dependency list: `<manifest file>`. Env vars: `<docs/environment.md or similar>`.
+
+---
+
+## Critical Pitfalls (read before editing)
+
+<!--
+The things that have actually broken, more than once, in a way a new
+contributor or a fresh agent session would not expect. Each entry: what
+breaks, why, and the one check that catches it before it ships. Not a
+changelog. If a pitfall stops recurring because a hook or lint rule now
+blocks it, delete the entry and keep the enforcement. -->
+
+- **<fragile area, e.g. "the installer's post-install hook">**: <what goes wrong and why> - check with `<command>` before touching it.
+- **<a bug class that has recurred>**: <the shape of it, one sentence> - the tell is `<the observable>`.
+
+---
+
+## Where to Look
+
+<!--
+An index, not a copy. Every row points at a doc/ file, a directory, or a
+tracker. If the answer would take more than a table row to say, it belongs
+in the linked file, not spelled out here. -->
+
+| Topic | Doc |
+| --- | --- |
+| Architecture, how the pieces fit together | `docs/architecture.md` |
+| Full hard-rule rationale and carve-outs | `docs/hard_rules.md` |
+| Environment variables | `docs/environment.md` |
+| Known issues, backlog | `<issue tracker URL>` |
+| Where the last session stopped | `<handoff file, e.g. NEXT_SESSION.md>` |
+
+---
+
+<!--
+Optional. Only include this if the project has one AGENTS.md is the
+cross-tool version of this file; see rules/AGENTS.md.template. Pick ONE of:
+(a) make this file a one-line pointer to AGENTS.md via an @-import, or
+(b) keep both and accept the duplication. Say which and why in one line. -->
+
+*This file targets Claude Code. <One line on how it relates to AGENTS.md, if
+the project has one.>*
