@@ -1,0 +1,73 @@
+name: CI
+
+# Pull requests only. A cron cadence on a repo like this buys nothing and
+# fails quietly the moment the account's Actions minutes run out.
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate skills, structure and sanitization
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install pinned dev dependencies
+        run: python -m pip install -r requirements-dev.txt
+
+      - name: Lint Python
+        run: python -m ruff check scripts tests
+
+      - name: Check formatting
+        run: python -m ruff format --check scripts tests
+
+      - name: Validate skill and agent frontmatter
+        run: python scripts/validate_skills.py
+
+      - name: Validate repo structure, templates and workflows
+        run: python scripts/validate_repo.py
+
+      - name: Check the tree is sanitized
+        run: python scripts/check_sanitization.py
+
+      - name: Run tests
+        run: python -m pytest -q
+
+  shell:
+    name: Shellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run shellcheck over every tracked shell script
+        run: |
+          set -euo pipefail
+          mapfile -d '' files < <(git ls-files -z '*.sh')
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "no shell scripts tracked"
+            exit 0
+          fi
+          printf '%s\n' "${files[@]}"
+          shellcheck --severity=warning "${files[@]}"
+
+  actions:
+    name: Lint GitHub Actions workflows
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run actionlint
+        run: |
+          set -euo pipefail
+          bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+          ./actionlint -color
