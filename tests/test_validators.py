@@ -184,6 +184,14 @@ def test_repo_structure_is_valid() -> None:
     assert problems == [], "\n".join(problems)
 
 
+def test_sanitization_exemptions_are_exactly_two_files() -> None:
+    expected = {
+        (REPO_ROOT / "scripts" / "check_sanitization.py").resolve(),
+        (REPO_ROOT / "tests" / "test_validators.py").resolve(),
+    }
+    assert set(check_sanitization.EXEMPT) == expected
+
+
 def test_repo_is_sanitized() -> None:
     findings = check_sanitization.scan(check_sanitization.tracked_files())
     assert findings == [], "\n".join(findings)

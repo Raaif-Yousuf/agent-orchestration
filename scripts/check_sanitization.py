@@ -18,7 +18,15 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
-SELF_PATH = Path(__file__).resolve()
+# Two files necessarily contain the patterns themselves: this checker, and the
+# test file that proves each rule can fire. Nothing else is ever exempt, and
+# the list is asserted in the tests so it cannot quietly grow.
+EXEMPT = frozenset(
+    {
+        Path(__file__).resolve(),
+        (REPO_ROOT / "tests" / "test_validators.py").resolve(),
+    }
+)
 
 TEXT_SUFFIXES = {
     ".md",
@@ -109,8 +117,8 @@ def tracked_files() -> list[Path]:
 def scan(paths: list[Path]) -> list[str]:
     findings: list[str] = []
     for path in paths:
-        if path.resolve() == SELF_PATH:
-            continue  # this file necessarily contains the patterns themselves
+        if path.resolve() in EXEMPT:
+            continue
         try:
             text = path.read_text(encoding="utf-8")
         except UnicodeDecodeError:
