@@ -17,7 +17,7 @@ $ python scripts/validate_repo.py
 $ python scripts/check_sanitization.py
 scanned 68 file(s), 0 finding(s)
 $ python -m pytest -q
-72 passed
+74 passed
 ```
 
 ## How it works
@@ -60,7 +60,9 @@ python agent-orchestration/scripts/validate_skills.py
 
 ## Tests
 
-`pip install -r requirements-dev.txt && pytest -q` runs 72 tests over the three
-validators and the hooks; the same commands run in CI on every pull request.
+`pip install -r requirements-dev.txt && pytest -q` runs the suite over the three
+validators and the hooks, and the same commands run in CI on every pull request.
+Run it for the current count rather than trusting the number in the block above,
+which was true the day it was pasted.
 
 MIT licensed.
