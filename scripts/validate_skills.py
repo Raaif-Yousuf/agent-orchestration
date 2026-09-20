@@ -11,6 +11,7 @@ Exit code 0 means every file passed.
 
 from __future__ import annotations
 
+import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -21,12 +22,19 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 
 # Agent Skills spec: name and description are required, the rest are optional.
 SKILL_REQUIRED = {"name", "description"}
+# The published Agent Skills spec allows: name, description, allowed-tools,
+# compatibility, license, metadata. The rest are host extensions that Claude
+# Code accepts in a skill's frontmatter; they are allowed here so a skill
+# written for that host still validates.
 SKILL_ALLOWED = SKILL_REQUIRED | {
     "allowed-tools",
     "compatibility",
     "license",
     "metadata",
     "disable-model-invocation",
+    "model",
+    "context",
+    "agent",
 }
 
 # Claude Code subagent definitions accept a wider, different set.
@@ -42,7 +50,19 @@ AGENT_ALLOWED = AGENT_REQUIRED | {
     "skills",
 }
 
-AGENT_MODELS = {"sonnet", "opus", "haiku", "inherit"}
+# Short aliases. A full model id (for example "claude-sonnet-4-5-20250929") is
+# also valid, so anything that looks like one is accepted rather than guessed
+# at: a validator that rejects a legal value is worse than no validator, because
+# the first thing anyone does with it is delete it.
+AGENT_MODEL_ALIASES = {"sonnet", "opus", "haiku", "fable", "inherit"}
+MODEL_ID = re.compile(r"^[a-z0-9]+(?:[.-][a-z0-9]+){2,}$")
+
+
+def is_valid_model(value: object) -> bool:
+    if not isinstance(value, str):
+        return False
+    return value in AGENT_MODEL_ALIASES or bool(MODEL_ID.match(value))
+
 
 # A description short enough to be useless as a trigger is the most common
 # authoring mistake, so there is a floor as well as a ceiling.
@@ -132,9 +152,13 @@ def check_file(path: Path, kind: str) -> list[Problem]:
 
     if kind == "agent":
         model = meta.get("model")
-        if model is not None and model not in AGENT_MODELS:
+        if model is not None and not is_valid_model(model):
             problems.append(
-                Problem(path, f"'model' must be one of {sorted(AGENT_MODELS)}, got {model!r}")
+                Problem(
+                    path,
+                    f"'model' must be one of {sorted(AGENT_MODEL_ALIASES)} "
+                    f"or a full model id, got {model!r}",
+                )
             )
 
     if not body.strip():

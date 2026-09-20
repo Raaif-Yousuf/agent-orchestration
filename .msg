@@ -1,17 +1,10 @@
-chore: scaffold the toolkit repo with validators and PR-triggered CI
+fix: accept every model value the subagent spec allows
 
-Sets up the skeleton every later section fills in: the eight content
-directories, an MIT licence, pinned dev dependencies, and the three
-validators that keep the repo copy-pasteable.
+The skill validator rejected two things that are legal: a subagent `model`
+given as a full model id rather than a short alias, and skill frontmatter
+keys that the host adds on top of the published spec (`model`, `context`,
+`agent`).
 
-- validate_skills.py checks SKILL.md and agent frontmatter against the
-  Agent Skills spec and the Claude Code subagent schema, including that a
-  skill's name matches its directory and its description is long enough
-  to actually trigger.
-- validate_repo.py checks issue forms, workflow shape, section READMEs,
-  and that this repo's own CI never grows a push or schedule trigger.
-- check_sanitization.py greps the tracked tree for absolute home paths,
-  tokens, bare IPs, personal emails and the private project names this
-  toolkit was generalised from.
-
-Every rule has a red test as well as a green one.
+A validator that rejects a legal value is worse than no validator, because
+the first thing anyone does with it is delete it. Both cases now pass, and
+both have tests on each side of the line.
