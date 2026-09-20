@@ -1,0 +1,80 @@
+name: Bug report
+description: Something is broken. Report what you saw, what you expected, and exactly how to reproduce it.
+title: "[bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The single most expensive failure in an issue tracker is an issue
+        nobody can close, because nobody wrote down what "done" would look
+        like. Fill in the observable, the expectation, and the exact
+        reproduction, not a general description of the area that feels off.
+
+  - type: textarea
+    id: observed
+    attributes:
+      label: What you saw
+      description: The exact, observable behavior. Paste the actual output, error text, or a description of what appeared, not a summary of it.
+      placeholder: |
+        Command produced: ...
+        Or: the page showed ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected instead
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Exact steps or command to reproduce
+      description: The precise command(s) you ran, or the exact steps, in order. "Use the app and it breaks" cannot be reproduced by anyone else.
+      placeholder: |
+        1. Run `<command>`
+        2. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: done_when
+    attributes:
+      label: What would tell you this is fixed
+      description: The observable that would change if this were actually fixed. This is what a reviewer checks before closing the issue.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version, commit, or branch
+      description: Whatever identifies the exact state you saw this on.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - "Blocks work entirely"
+        - "Workaround exists"
+        - "Cosmetic / minor"
+      default: 1
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and did not find a duplicate.
+          required: true
+        - label: I reproduced this with the exact steps above, not from memory.
+          required: true
