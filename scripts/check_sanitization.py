@@ -11,6 +11,7 @@ Run it directly or through pytest. Exit code 0 means the tree is clean.
 
 from __future__ import annotations
 
+import hashlib
 import re
 import subprocess
 import sys
@@ -89,17 +90,47 @@ RULES: list[tuple[str, re.Pattern[str]]] = [
     ),
 ]
 
-# Names and strings from the private sources this toolkit was generalised from.
-# They must never appear. Kept lowercase; matching is case-insensitive.
-BANNED_SUBSTRINGS = [
-    "clairanalytics",
-    "ignatiusnocturne",
-    "abako",
-    "classwiz",
-    "onrender.com",
-    "trusted_signing",
-    "r2_libpack",
-]
+# Names from the private sources this toolkit was generalised from. They are
+# stored as SHA-256 of the lowercased token, never in plaintext, because this
+# file is public and a denylist written out in the clear publishes exactly the
+# names it exists to keep out. That is not paranoia: the first version of this
+# list was plaintext, and it was the only place in the repo where those names
+# still appeared.
+#
+# The trade-off is real and worth stating. A hash list only catches a token it
+# has seen; it cannot catch a name nobody thought to add, and it cannot be
+# reviewed by reading it. It is a backstop under human judgement, not a
+# replacement for it.
+#
+# To add a name, add the sha256 of its lowercased form:
+#   python -c "import hashlib,sys; \
+#              print(hashlib.sha256(sys.argv[1].lower().encode()).hexdigest())" NAME
+DENIED_TOKEN_HASHES = frozenset(
+    {
+        "e228188027a6616e1d2ff510d6738917c808497ed7a78197121c1424420fba9b",
+        "2fc0631df2ae5e206fedbb9e6b5591b034ea6471b09af7f28a2c92f5f6ae3281",
+        "9b6d5ec68fe54006a8ea3f0f2922a57e821916b4927447ea30f6cfa2e134008c",
+        "579e21bc066861eddf98503abc397d0a3a469b614c0a94eba49dfb6f2371073e",
+        "f2c6f61db7153a0debb204645a4227254169d923b2e0afe112622c4e6d71666d",
+        "0194fa79624b7371a8ff856e9c8df499ba502ba10069c95fb81c664aeaaaa487",
+        "f4319b43d42723e2a7cb086719d81482567c92a5097957b2c78d673a7aee453f",
+        "5d86d506f4f54726d14d3ff3621922e97dfe6124ef8d24a140808107af89a3a2",
+        # A canary, so the rule has a red test without publishing a real name.
+        # It is the sha256 of the token in tests/test_validators.py's fixture.
+        "b606d15cd0e11b3bc4cba25a487251bdf8002d4a667943bd213f0382bd84ed44",
+    }
+)
+
+TOKEN = re.compile(r"[a-z0-9]+")
+
+
+def denied_tokens(line: str) -> list[str]:
+    """Return the tokens on this line whose hash is on the denylist."""
+    hits = []
+    for token in TOKEN.findall(line.lower()):
+        if hashlib.sha256(token.encode()).hexdigest() in DENIED_TOKEN_HASHES:
+            hits.append(token)
+    return hits
 
 
 def tracked_files() -> list[Path]:
@@ -131,10 +162,8 @@ def scan(paths: list[Path]) -> list[str]:
                 match = pattern.search(line)
                 if match:
                     findings.append(f"{rel}:{lineno}: {label}: {match.group(0)!r}")
-            lowered = line.lower()
-            for banned in BANNED_SUBSTRINGS:
-                if banned in lowered:
-                    findings.append(f"{rel}:{lineno}: private source name: {banned!r}")
+            for token in denied_tokens(line):
+                findings.append(f"{rel}:{lineno}: name from a private source: {token!r}")
     return findings
 
 
