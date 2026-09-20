@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(npm test)",
+      "Bash(npm run test *)",
+      "Bash(npm run lint)",
+      "Bash(npx eslint *)",
+      "Bash(npx vitest run *)",
+      "Bash(pytest *)",
+      "Bash(python -m pytest *)",
+      "Bash(.venv/Scripts/python.exe -m pytest *)",
+      "Bash(python -m ruff check *)",
+      "Bash(python -m ruff format --check *)",
+      "Bash(.venv/Scripts/python.exe -m ruff check *)",
+      "PowerShell(Get-Content *)",
+      "PowerShell(Get-ChildItem *)",
+      "PowerShell(Get-Item *)",
+      "PowerShell(Get-Process *)",
+      "PowerShell(Get-CimInstance *)",
+      "PowerShell(Select-String *)",
+      "PowerShell(Select-Object *)",
+      "PowerShell(Measure-Object *)",
+      "PowerShell(Test-Path *)",
+      "PowerShell(Write-Output *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 tooling/hooks/block-git-stash.py",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "python3 tooling/hooks/block-recursive-delete.py",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Agent|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 tooling/hooks/block-agent-dispatch-in-worktree.py",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
