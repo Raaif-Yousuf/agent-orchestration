@@ -71,10 +71,31 @@ def test_unknown_skill_key_is_caught(tmp_path: Path) -> None:
     path = write_skill(
         tmp_path,
         "extra-key",
-        f"name: extra-key\ndescription: {GOOD_DESCRIPTION}\nmodel: opus",
+        f"name: extra-key\ndescription: {GOOD_DESCRIPTION}\ntools: Read, Grep",
     )
     problems = validate_skills.check_file(path, "skill")
-    assert any("unknown frontmatter key 'model'" in p.message for p in problems)
+    assert any("unknown frontmatter key 'tools'" in p.message for p in problems)
+
+
+@pytest.mark.parametrize(
+    "model", ["sonnet", "opus", "haiku", "fable", "inherit", "claude-sonnet-4-5-20250929"]
+)
+def test_valid_agent_models_are_accepted(model: str) -> None:
+    assert validate_skills.is_valid_model(model)
+
+
+@pytest.mark.parametrize("model", ["gpt", "Sonnet", "", 4, None, "claude sonnet"])
+def test_invalid_agent_models_are_rejected(model: object) -> None:
+    assert not validate_skills.is_valid_model(model)
+
+
+def test_skill_may_carry_host_extension_keys(tmp_path: Path) -> None:
+    path = write_skill(
+        tmp_path,
+        "host-extras",
+        f"name: host-extras\ndescription: {GOOD_DESCRIPTION}\nmodel: sonnet",
+    )
+    assert validate_skills.check_file(path, "skill") == []
 
 
 def test_agent_model_is_validated(tmp_path: Path) -> None:
